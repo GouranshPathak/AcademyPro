@@ -4,6 +4,8 @@ import { HeroSection } from '@/components/sections/hero-section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Award, Target } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -43,40 +45,56 @@ const Home = () => {
 
           <div className="flex flex-wrap justify-center gap-8 mb-12">
             {features.map((feature, index) => (
-              <Card
+              <motion.div
                 key={index}
-                className="relative overflow-hidden group hover:shadow-hero transition-all duration-300 max-w-sm w-full"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                viewport={{ once: true }}
               >
-                {feature.highlight && (
-                  <div className="absolute top-4 right-4 bg-warning text-warning-foreground px-3 py-1 rounded-full text-xs font-semibold">
-                    {feature.highlight}
-                  </div>
-                )}
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground mb-6">{feature.description}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="group"
-                    onClick={() => navigate(feature.linkTo)}
-                  >
-                    Learn More
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </CardContent>
-              </Card>
+                <Card className="relative overflow-hidden group hover:shadow-hero transition-all duration-300 max-w-sm w-full">
+                  {feature.highlight && (
+                    <div className="absolute top-4 right-4 bg-warning text-warning-foreground px-3 py-1 rounded-full text-xs font-semibold">
+                      {feature.highlight}
+                    </div>
+                  )}
+                  <CardContent className="p-8 text-center">
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-6"
+                    >
+                      <feature.icon className="w-8 h-8 text-white" />
+                    </motion.div>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground mb-6">{feature.description}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="group"
+                      onClick={() => navigate(feature.linkTo)}
+                    >
+                      Learn More
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
 
           <div className="text-center">
-            <Button size="lg" className="text-lg px-8 py-4">
-              Start Your Journey Today
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              <Link to="/contact">
+                <Button size="lg" className="text-lg px-8 py-4">
+                  Start Your Journey Today
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>

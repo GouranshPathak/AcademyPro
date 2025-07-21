@@ -1,69 +1,81 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-require('dotenv').config({ override: true });
+const dotenv = require('dotenv');
+const connectDB = require('./config/db');
+const enrollRoute = require('./routes/enroll');
+const contactRoute = require('./routes/Contact'); // Make sure this line is present
+const mockTestRoute = require('./routes/mocktest');
+
+dotenv.config();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB
+connectDB();
 
 app.use(cors());
 app.use(express.json());
 
+// API routes
+app.use('/api/enroll', enrollRoute);
+app.use('/api/contact', contactRoute); // Make sure this line is present
+app.use('/api/mocktest', mockTestRoute);
+
+// Gemini AI Chat Route
 app.post('/api/chat', async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, history = [] } = req.body;
 
   if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
     return res.status(400).json({ error: 'Prompt is required and must be a non-empty string.' });
   }
 
-  // --- 1. Define the System Prompt ---
-  // This block defines the AI's persona, capabilities, and rules.
   const systemPrompt = `You are an expert AI Study Plan Companion named 'StudyAI'. Your sole purpose is to assist students preparing for the Indian competitive exams: JEE (Main & Advanced) for engineering and NEET for medical.
 
-  **Your Core Capabilities:**
-  1.  **Create Personalized Study Plans:** Based on the user's target exam (JEE/NEET), current class (11th, 12th, dropper), available study hours, and strengths/weaknesses, create detailed daily, weekly, and monthly study schedules.
-  2.  **Syllabus Breakdown:** Break down the Physics, Chemistry, and Maths/Biology syllabi into manageable topics and sub-topics. Provide the weightage of important chapters based on past papers.
-  3.  **Resource Recommendation:** Suggest standard and recommended books (e.g., NCERT, HC Verma, OP Tandon), online resources, and mock test series.
-  4.  **Doubt Clarification:** Provide clear, concise explanations for specific academic concepts.
-  5.  **Motivational Support:** Offer encouragement and strategies to manage stress and maintain focus.
+The current date is July 20, 2025. Use this for all scheduling and timeline-related queries.
 
-  **Interaction Rules:**
-  - When a user first asks for a plan, ALWAYS ask clarifying questions first to personalize it. For example: "Great! To create the best plan for you, could you please tell me: 1. Which exam are you targeting (JEE or NEET)? 2. What is your current class? 3. How many hours can you study each day? 4. Which subjects do you find most challenging?"
-  - Use markdown (tables, lists, bold text) to make your responses structured and easy to read.
-  - Always be encouraging, positive, and supportive.`;
+**Your Core Capabilities:**
+1. **Create Personalized Study Plans**
+2. **Syllabus Breakdown**
+3. **Resource Recommendation**
+4. **Doubt Clarification**
+5. **Motivational Support**
+
+**Interaction Rules:**
+- Always ask clarifying questions before generating a study plan.
+- Use markdown for structure.
+- Be positive, helpful, and supportive.
+- Use the conversation history for context.`;
 
   try {
     const model = 'gemini-1.5-flash-latest';
+    const contents = [
+      ...history,
+      { role: 'user', parts: [{ text: prompt }] },
+    ];
+
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
-        // --- 2. Structure the conversation with the system prompt ---
-        // This sends our instructions and the user's query together.
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: systemPrompt }]
-          },
-          {
-            role: 'model',
-            parts: [{ text: "Understood. I am StudyAI, ready to help create the perfect study plan for JEE or NEET aspirants. How can I assist you today?" }]
-          },
-          // --- 3. Add the actual user's message ---
-          {
-            role: 'user',
-            parts: [{ text: prompt }]
-          }
-        ]
+        contents,
+        systemInstruction: { parts: [{ text: systemPrompt }] },
       }
     );
-    const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I didn't understand that.";
+
+    const reply =
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I am unable to process that request right now.";
+      
     res.json({ reply });
+
   } catch (error) {
     console.error('Gemini API Error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch response from Gemini API' });
+    res.status(500).json({ error: 'Failed to fetch response from the AI model.' });
   }
 });
 
+// Start the server
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
