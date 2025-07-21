@@ -4,7 +4,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const enrollRoute = require('./routes/enroll');
-const contactRoute = require('./routes/Contact'); // Make sure this line is present
+const contactRoute = require('./routes/Contact');
 const mockTestRoute = require('./routes/mocktest');
 
 dotenv.config();
@@ -15,12 +15,17 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 
-app.use(cors());
+// ✅ CORS configuration: allow Vercel frontend
+app.use(cors({
+  origin: 'https://academy-pro-black.vercel.app',
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // API routes
 app.use('/api/enroll', enrollRoute);
-app.use('/api/contact', contactRoute); // Make sure this line is present
+app.use('/api/contact', contactRoute);
 app.use('/api/mocktest', mockTestRoute);
 
 // Gemini AI Chat Route
